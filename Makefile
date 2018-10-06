@@ -2,12 +2,15 @@ CC=gcc
 BIN=bin
 CFLAGS=-Wall
 
-all: aes
+all: cli
 
-aes: aes.c
-	$(CC) $(CFLAGS) $< -o $(BIN)/$@
+cli: cli.c aes.o
+	$(CC) $(CFLAGS) $^ -o $(BIN)/$@
 
-run: aes
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+run: cli
 	./$(BIN)/$<
 
 clean:
