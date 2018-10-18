@@ -19,14 +19,8 @@ void shift_rows(uint8_t block[BLOCK_SIZE])
   uint8_t i, j, x;
 
   for (i = 1; i < BLOCK_ROWS; i++) {
-    // Shift i times
-    for (j = 0; j < i; j++) {
-      x = block[I(i, 0)];
-      block[I(i, 0)] = block[I(i, 1)];
-      block[I(i, 1)] = block[I(i, 2)];
-      block[I(i, 2)] = block[I(i, 3)];
-      block[I(i, 3)] = x;
-    }
+    // Circular Shift i times
+    crot32(block + i*4, i);
   }
 }
 

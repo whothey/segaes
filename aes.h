@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <string.h>
 
 #ifdef DEBUG
 #include <stdio.h>
@@ -81,9 +82,18 @@ static const uint8_t rsbox[256] = {
 };
 
 static const uint8_t column_mix[BLOCK_SIZE] = { 2, 3, 1, 1,
-                                             1, 2, 3, 1,
-                                             1, 1, 2, 3,
-                                             3, 1, 1, 2 };
+                                                1, 2, 3, 1,
+                                                1, 1, 2, 3,
+                                                3, 1, 1, 2 };
+
+static const uint8_t rcon[10] = { 0x01, 0x02,	0x04,	0x08 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36 };
+
+// Circular rot 32bits inplace
+inline static void crot32(uint8_t* x, size_t times) {
+  uint32_t *X = (uint32_t *)x;
+  uint32_t s = (*X) >> 8*times | (*X) << (abs(4 - times) % 4 * 8);
+  memcpy(x, (uint8_t *) &s, sizeof(uint32_t));
+}
 
 void sbox_round(uint8_t[BLOCK_SIZE]);
 void shift_rows(uint8_t[BLOCK_SIZE]);
