@@ -95,11 +95,13 @@ inline static void crot32(uint8_t* x, size_t times) {
   memcpy(x, (uint8_t *) &s, sizeof(uint32_t));
 }
 
+void sbox32(uint32_t*);
 void sbox_round(uint8_t[BLOCK_SIZE]);
 void shift_rows(uint8_t[BLOCK_SIZE]);
 void mix_cols(uint8_t[BLOCK_SIZE]);
 void copy_block(uint8_t[BLOCK_SIZE], uint8_t[BLOCK_SIZE]);
 void add_subkey(uint8_t[BLOCK_SIZE], uint8_t[BLOCK_SIZE]);
+void expand(uint8_t*, uint8_t)
 
 #ifdef DEBUG
 void print_block(const uint8_t[BLOCK_SIZE]);
