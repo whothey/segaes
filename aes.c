@@ -24,11 +24,11 @@ void sbox_round(uint8_t block[BLOCK_SIZE])
 
 void shift_rows(uint8_t block[BLOCK_SIZE])
 {
-  uint8_t i, j, x;
+  uint8_t i;
 
   for (i = 1; i < BLOCK_ROWS; i++) {
     // Circular Shift i times
-    crot32(block + i*4, i);
+    crot32((uint32_t *)(block + i*4), i);
   }
 }
 
@@ -58,25 +58,49 @@ void add_subkey(uint8_t blk[BLOCK_SIZE], uint8_t key[BLOCK_SIZE])
 
 void expand(uint8_t *key, size_t size)
 {
-  uint8_t i, nwords = size / 32, prevkey = malloc(sizeof(uint32_t));
+  uint8_t i, nwords = size / 32, rounds = nwords + 7;
+  uint32_t
+    *prevkey,
+    *kw,
+    curw = 0,
+    round_constant,
+    tempword[4],
+    whole[4 * AES_ROUNDS_256]; // Worst case
 
-  for (i = 0; i < nwords; i++) {
-    prevkey = (uint32_t *) (key + i - 1);
+  for (i = 0; i < 4*rounds; i++) {
+    prevkey = whole + i - 1;
+    curw = *(whole + i - nwords);
+    round_constant = rcon[i / nwords - 1];
 
     if (i < nwords) {
-      // let as it is
+      kw = (uint32_t*) key;
+      whole[i] = *(kw + i);
     } else if (i >= nwords && (i % nwords == 0)) {
-      key[i] = key[i - nwords] ^ crot32(sbox32(prevkey)) ^ rcon[i / nwords];
+      memcpy(tempword, prevkey, sizeof(uint32_t));
+      sbox32(tempword);
+      crot32(tempword, 1);
+      whole[i] = curw ^ *tempword ^ round_constant;
     } else if (i >= nwords && nwords > 6 && ((i - 4) % nwords == 0)) {
-      key[i] = key[i - nwords] ^ sbox32(prevkey);
+      memcpy(tempword, prevkey, sizeof(uint32_t));
+      sbox32(tempword);
+      whole[i] = curw ^ *tempword;
     } else {
-      key[i] = key[i - nwords] ^ (key + i - 1);
+      whole[i] = curw ^ *(whole + i - 1);
     }
   }
+
+#ifdef DEBUG
+  printf("EXPANSION:\n");
+
+  for (i = 0; i < rounds; i++) {
+    printf("%02d:", i);
+    print_key_round((uint8_t *) whole + i*16);
+  }
+#endif
 }
 
 #ifdef DEBUG
-void print_block(const uint8_t block[BLOCK_SIZE])
+void print_block_inline(const uint8_t block[BLOCK_SIZE])
 {
   uint8_t i, j;
 
@@ -84,7 +108,50 @@ void print_block(const uint8_t block[BLOCK_SIZE])
     for (j = 0; j < BLOCK_COLS; j++) {
       printf(" %2d ", block[I(i, j)]);
     }
-    printf("\n");
   }
+}
+
+void print_block(const uint8_t block[BLOCK_SIZE])
+{
+  print_block_inline(block);
+  printf("\n");
+}
+
+void print_key(const uint8_t *block, size_t size)
+{
+  uint8_t i, len = size / 8;
+
+  printf("{");
+
+  for (i = 0; i < len; i++) {
+    printf(" %4c ", block[i]);
+  }
+
+  printf("}\n{");
+
+  for (i = 0; i < len; i++) {
+    printf(" 0x%02x ", block[i]);
+  }
+
+  printf("}\n");
+}
+
+void print_word(const uint32_t* word)
+{
+  uint8_t *bytes = (uint8_t *) word;
+
+  printf(" 0x%02x ", bytes[0]);
+  printf(" 0x%02x ", bytes[1]);
+  printf(" 0x%02x ", bytes[2]);
+  printf(" 0x%02x \n", bytes[3]);
+}
+
+void print_key_round(const uint8_t* word)
+{
+  for (uint8_t i = 0; i < 16; i++) {
+    printf(" %02X ", word[i]);
+  }
+
+  printf("\n");
 }
 #endif // DEBUG

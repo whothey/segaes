@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 #ifdef DEBUG
@@ -86,13 +87,12 @@ static const uint8_t column_mix[BLOCK_SIZE] = { 2, 3, 1, 1,
                                                 1, 1, 2, 3,
                                                 3, 1, 1, 2 };
 
-static const uint8_t rcon[10] = { 0x01, 0x02,	0x04,	0x08 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36 };
+static const uint8_t rcon[10] = { 0x01, 0x02,	0x04,	0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36 };
 
 // Circular rot 32bits inplace
-inline static void crot32(uint8_t* x, size_t times) {
-  uint32_t *X = (uint32_t *)x;
-  uint32_t s = (*X) >> 8*times | (*X) << (abs(4 - times) % 4 * 8);
-  memcpy(x, (uint8_t *) &s, sizeof(uint32_t));
+inline static void crot32(uint32_t* x, size_t times) {
+  uint32_t s = (*x) >> 8*times | (*x) << (abs(4 - times) % 4 * 8);
+  memcpy(x, &s, sizeof(uint32_t));
 }
 
 void sbox32(uint32_t*);
@@ -101,9 +101,12 @@ void shift_rows(uint8_t[BLOCK_SIZE]);
 void mix_cols(uint8_t[BLOCK_SIZE]);
 void copy_block(uint8_t[BLOCK_SIZE], uint8_t[BLOCK_SIZE]);
 void add_subkey(uint8_t[BLOCK_SIZE], uint8_t[BLOCK_SIZE]);
-void expand(uint8_t*, uint8_t)
+void expand(uint8_t*, size_t);
 
 #ifdef DEBUG
+void print_block_inline(const uint8_t[BLOCK_SIZE]);
 void print_block(const uint8_t[BLOCK_SIZE]);
+void print_key(const uint8_t*, size_t);
+void print_key_round(const uint8_t*);
 #endif // DEBUG
 #endif // AES_WT_H
